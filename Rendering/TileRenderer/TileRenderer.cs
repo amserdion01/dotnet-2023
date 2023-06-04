@@ -13,114 +13,97 @@ public static class TileRenderer
         BaseShape? baseShape = null;
 
         var featureType = feature.Type;
-        if (feature.Properties.Any(p => p.Key == "highway" && MapFeature.HighwayTypes.Any(v => p.Value.StartsWith(v))))
+        var coordinates = feature.Coordinates;
+        // Used from RenderingTypes.
+        // Assigning to baseShape a specific Property that is found.
+        bool road = Road.isRoad(feature);
+        bool water = Waterway.isWaterway(feature);
+        bool border = Border.isBorder(feature);
+        bool place = PopulatedPlace.isPopulatedPlace(feature);
+        bool railway = Railway.isRailway(feature);
+        bool natural = GeoFeature.isNatural(feature);
+        bool building = GeoFeature.isBuilding(feature);
+        bool forest = GeoFeature.isForest(feature);
+        bool public_amenity = GeoFeature.isPublicAmenity(feature);
+        bool private_amenity = GeoFeature.isPrivateAmenity(feature);
+        bool landuseForestOrOrchad = GeoFeature.isLanduseForestOrOrchad(feature);
+        bool landusePlain = GeoFeature.isLandusePlain(feature);
+        bool landuseResidential = GeoFeature.isLanduseResidential(feature);
+        BaseShape temp = null;
+        switch (true)
         {
-            var coordinates = feature.Coordinates;
-            var road = new Road(coordinates);
-            baseShape = road;
-            shapes.Enqueue(road, road.ZIndex);
-        }
-        else if (feature.Properties.Any(p => p.Key.StartsWith("water")) && feature.Type != GeometryType.Point)
-        {
-            var coordinates = feature.Coordinates;
 
-            var waterway = new Waterway(coordinates, feature.Type == GeometryType.Polygon);
-            baseShape = waterway;
-            shapes.Enqueue(waterway, waterway.ZIndex);
-        }
-        else if (Border.ShouldBeBorder(feature))
-        {
-            var coordinates = feature.Coordinates;
-            var border = new Border(coordinates);
-            baseShape = border;
-            shapes.Enqueue(border, border.ZIndex);
-        }
-        else if (PopulatedPlace.ShouldBePopulatedPlace(feature))
-        {
-            var coordinates = feature.Coordinates;
-            var popPlace = new PopulatedPlace(coordinates, feature);
-            baseShape = popPlace;
-            shapes.Enqueue(popPlace, popPlace.ZIndex);
-        }
-        else if (feature.Properties.Any(p => p.Key.StartsWith("railway")))
-        {
-            var coordinates = feature.Coordinates;
-            var railway = new Railway(coordinates);
-            baseShape = railway;
-            shapes.Enqueue(railway, railway.ZIndex);
-        }
-        else if (feature.Properties.Any(p => p.Key.StartsWith("natural") && featureType == GeometryType.Polygon))
-        {
-            var coordinates = feature.Coordinates;
-            var geoFeature = new GeoFeature(coordinates, feature);
-            baseShape = geoFeature;
-            shapes.Enqueue(geoFeature, geoFeature.ZIndex);
-        }
-        else if (feature.Properties.Any(p => p.Key.StartsWith("boundary") && p.Value.StartsWith("forest")))
-        {
-            var coordinates = feature.Coordinates;
-            var geoFeature = new GeoFeature(coordinates, GeoFeature.GeoFeatureType.Forest);
-            baseShape = geoFeature;
-            shapes.Enqueue(geoFeature, geoFeature.ZIndex);
-        }
-        else if (feature.Properties.Any(p => p.Key.StartsWith("landuse") && (p.Value.StartsWith("forest") || p.Value.StartsWith("orchard"))))
-        {
-            var coordinates = feature.Coordinates;
-            var geoFeature = new GeoFeature(coordinates, GeoFeature.GeoFeatureType.Forest);
-            baseShape = geoFeature;
-            shapes.Enqueue(geoFeature, geoFeature.ZIndex);
-        }
-        else if (feature.Type == GeometryType.Polygon && feature.Properties.Any(p
-                     => p.Key.StartsWith("landuse") && (p.Value.StartsWith("residential") || p.Value.StartsWith("cemetery") || p.Value.StartsWith("industrial") || p.Value.StartsWith("commercial") ||
-                                                        p.Value.StartsWith("square") || p.Value.StartsWith("construction") || p.Value.StartsWith("military") || p.Value.StartsWith("quarry") ||
-                                                        p.Value.StartsWith("brownfield"))))
-        {
-            var coordinates = feature.Coordinates;
-            var geoFeature = new GeoFeature(coordinates, GeoFeature.GeoFeatureType.Residential);
-            baseShape = geoFeature;
-            shapes.Enqueue(geoFeature, geoFeature.ZIndex);
-        }
-        else if (feature.Type == GeometryType.Polygon && feature.Properties.Any(p
-                     => p.Key.StartsWith("landuse") && (p.Value.StartsWith("farm") || p.Value.StartsWith("meadow") || p.Value.StartsWith("grass") || p.Value.StartsWith("greenfield") ||
-                                                        p.Value.StartsWith("recreation_ground") || p.Value.StartsWith("winter_sports") || p.Value.StartsWith("allotments"))))
-        {
-            var coordinates = feature.Coordinates;
-            var geoFeature = new GeoFeature(coordinates, GeoFeature.GeoFeatureType.Plain);
-            baseShape = geoFeature;
-            shapes.Enqueue(geoFeature, geoFeature.ZIndex);
-        }
-        else if (feature.Type == GeometryType.Polygon &&
-                 feature.Properties.Any(p => p.Key.StartsWith("landuse") && (p.Value.StartsWith("reservoir") || p.Value.StartsWith("basin"))))
-        {
-            var coordinates = feature.Coordinates;
-            var geoFeature = new GeoFeature(coordinates, GeoFeature.GeoFeatureType.Water);
-            baseShape = geoFeature;
-            shapes.Enqueue(geoFeature, geoFeature.ZIndex);
-        }
-        else if (feature.Type == GeometryType.Polygon && feature.Properties.Any(p => p.Key.StartsWith("building")))
-        {
-            var coordinates = feature.Coordinates;
-            var geoFeature = new GeoFeature(coordinates, GeoFeature.GeoFeatureType.Residential);
-            baseShape = geoFeature;
-            shapes.Enqueue(geoFeature, geoFeature.ZIndex);
-        }
-        else if (feature.Type == GeometryType.Polygon && feature.Properties.Any(p => p.Key.StartsWith("leisure")))
-        {
-            var coordinates = feature.Coordinates;
-            var geoFeature = new GeoFeature(coordinates, GeoFeature.GeoFeatureType.Residential);
-            baseShape = geoFeature;
-            shapes.Enqueue(geoFeature, geoFeature.ZIndex);
-        }
-        else if (feature.Type == GeometryType.Polygon && feature.Properties.Any(p => p.Key.StartsWith("amenity")))
-        {
-            var coordinates = feature.Coordinates;
-            var geoFeature = new GeoFeature(coordinates, GeoFeature.GeoFeatureType.Residential);
-            baseShape = geoFeature;
-            shapes.Enqueue(geoFeature, geoFeature.ZIndex);
+            case var value when value == natural:
+                temp = new GeoFeature(coordinates, feature);
+                baseShape = temp; 
+                break;
+
+            case var value when value == railway:
+                temp = new Railway(coordinates);
+                baseShape = temp; 
+                break;
+
+            case var value when value == road:
+                temp = new Road(coordinates);
+                baseShape = temp; 
+                break;
+
+            case var value when value == water:
+                temp = new Waterway(coordinates, feature.Type == GeometryType.Polygon);
+                baseShape = temp; 
+                break;
+
+            case var value when value == border:
+                temp = new Border(coordinates);
+                baseShape = temp; 
+                break;
+
+            case var value when value == place:
+                temp = new PopulatedPlace(coordinates, feature);
+                baseShape = temp; 
+                break;
+
+            case var value when value == building:
+                temp = new GeoFeature(coordinates, GeoFeature.GeoFeatureType.Residential);
+                baseShape = temp; 
+                break;
+
+            case var value when value == forest:
+                temp = new GeoFeature(coordinates, GeoFeature.GeoFeatureType.Forest);
+                baseShape = temp; 
+                break;
+
+            case var value when value == public_amenity:
+                temp = new GeoFeature(coordinates, GeoFeature.GeoFeatureType.Unknown);
+                baseShape = temp; 
+                break;
+
+            case var value when value == private_amenity:
+                temp = new GeoFeature(coordinates, GeoFeature.GeoFeatureType.Unknown);
+                baseShape = temp; 
+                break;
+
+            case var value when value == landuseForestOrOrchad:
+                temp = new GeoFeature(coordinates, GeoFeature.GeoFeatureType.Forest);
+                baseShape = temp; 
+                break;
+
+            case var value when value == landusePlain:
+                temp = new GeoFeature(coordinates, GeoFeature.GeoFeatureType.Plain);
+                baseShape = temp; 
+                break;
+
+            case var value when value == landuseResidential:
+                temp = new GeoFeature(coordinates, GeoFeature.GeoFeatureType.Residential);
+                baseShape = temp; 
+                break;
         }
 
         if (baseShape != null)
         {
+            // Adding the found Property to the priority queue.
+            shapes.Enqueue(baseShape, baseShape.ZIndex);
+
             for (var j = 0; j < baseShape.ScreenCoordinates.Length; ++j)
             {
                 boundingBox.MinX = Math.Min(boundingBox.MinX, baseShape.ScreenCoordinates[j].X);
@@ -147,11 +130,6 @@ public static class TileRenderer
         while (shapes.Count > 0)
         {
             var entry = shapes.Dequeue();
-            // FIXME: Hack
-            if (entry.ScreenCoordinates.Length < 2)
-            {
-                continue;
-            }
             entry.TranslateAndScale(boundingBox.MinX, boundingBox.MinY, scale, canvas.Height);
             canvas.Mutate(x => entry.Render(x));
         }
